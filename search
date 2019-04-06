@@ -1,0 +1,28 @@
+// Search with a term query
+	termQuery := elastic.NewTermQuery("user", "olivere")
+	searchResult, err := client.Search().
+		Index("tweets").            // search in index "tweets"
+		Query(termQuery).           // specify the query
+		Sort("user.keyword", true). // sort by "user" field, ascending
+		From(0).Size(10).           // take documents 0-9
+		Pretty(true).               // pretty print request and response JSON
+		Do(context.Background())    // execute
+	if err != nil {
+		// Handle error
+		panic(err)
+	}
+
+	// searchResult is of type SearchResult and returns hits, suggestions,
+	// and all kinds of other information from Elasticsearch.
+              fmt.Printf("Query took %d milliseconds\n", searchResult.TookInMillis)
+
+	// Each is a convenience function that iterates over hits in a search result.
+	// It makes sure you don't need to check for nil values in the response.
+	// However, it ignores errors in serialization. If you want full control
+	// over iterating the hits, see below.
+	var ttyp Tweet
+	for _, item := range searchResult.Each(reflect.TypeOf(ttyp)) {
+		if t, ok := item.(Tweet); ok {
+			fmt.Printf("Tweet by %s: %s\n", t.User, t.Message)
+		}
+	}
